@@ -1,0 +1,445 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KRÉTA Plusz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#eef1ee; --panel:#fbfcfb; --ink:#16211c; --mute:#66736c; --line:#d9dfdb;
+  --board:#1d3a32; --board-ink:#e9f1ec; --accent:#2f7d5b;
+  --g5:#2e8b5e; --g4:#7aa63a; --g3:#d9a21b; --g2:#d9671b; --g1:#c23a3a;
+  --warn:#b4531a; --r:14px;
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#111815; --panel:#18211d; --ink:#e7eee9; --mute:#8d9b93; --line:#28342f; --board:#0e1c17; --accent:#52b788}
+}
+*{box-sizing:border-box}
+html{font-family:"Schibsted Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink)}
+body{margin:0;min-height:100vh}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.hidden{display:none!important}
+
+/* Belépés */
+#login{min-height:100vh;display:grid;place-items:center;padding:20px;background:var(--board);color:var(--board-ink)}
+#login form{width:min(420px,100%);display:grid;gap:14px}
+#login h1{font-size:clamp(2.4rem,9vw,3.6rem);line-height:.95;margin:0 0 6px;font-weight:900;letter-spacing:-.03em}
+#login p{margin:0 0 8px;opacity:.75}
+label{display:grid;gap:6px;font-size:.9rem}
+input,select{padding:12px 14px;border-radius:10px;border:1px solid var(--line);background:var(--panel)}
+#login input{background:#ffffff14;border-color:#ffffff30;color:#fff}
+.btn{padding:12px 18px;border:0;border-radius:10px;background:var(--accent);color:#fff;font-weight:700;cursor:pointer}
+.btn.ghost{background:transparent;border:1px solid currentColor;color:inherit}
+.err{color:#ffb4a2;min-height:1.2em;font-size:.9rem}
+
+/* Keret */
+#app{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
+nav{background:var(--board);color:var(--board-ink);padding:22px 14px;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:4px}
+nav b{font-size:1.3rem;font-weight:900;letter-spacing:-.02em;padding:0 10px 14px}
+nav button{text-align:left;background:none;border:0;color:inherit;padding:10px 12px;border-radius:10px;cursor:pointer;opacity:.8}
+nav button[aria-current=page]{background:#ffffff1c;opacity:1;font-weight:700}
+nav .sp{flex:1}
+main{padding:28px clamp(16px,4vw,44px);max-width:1100px;width:100%}
+h2{font-size:1.6rem;margin:0 0 18px;letter-spacing:-.02em}
+h3{margin:0 0 10px;font-size:1.05rem}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:18px}
+.grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(290px,1fr))}
+.muted{color:var(--mute);font-size:.9rem}
+.row{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:9px 0;border-top:1px solid var(--line)}
+.row:first-child{border-top:0}
+.empty{color:var(--mute);padding:8px 0}
+
+/* Jegyek: ez a fő látványelem */
+.chip{display:inline-grid;place-items:center;min-width:2.1em;height:2.1em;border-radius:10px;font-weight:900;color:#fff;background:var(--mute)}
+.chip.g5{background:var(--g5)}.chip.g4{background:var(--g4)}.chip.g3{background:var(--g3)}.chip.g2{background:var(--g2)}.chip.g1{background:var(--g1)}
+.chip.w{outline:2px dashed var(--ink);outline-offset:1px}
+.chip.hyp{opacity:.55;outline:2px dashed var(--accent)}
+.avg{font-size:2.6rem;font-weight:900;letter-spacing:-.03em;line-height:1}
+.subj{padding:14px 0;border-top:1px solid var(--line)}
+.subj:first-child{border-top:0}
+.subj header{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.need{font-size:.88rem;color:var(--mute);margin-top:8px}
+.tools{display:flex;gap:12px;flex-wrap:wrap;align-items:end;margin-bottom:16px}
+.bar{height:8px;border-radius:99px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent)}
+
+/* Órarend */
+.week{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.day{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:12px}
+.day h4{margin:0 0 8px}
+.day.today{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset}
+.lesson{padding:8px 0;border-top:1px solid var(--line);font-size:.92rem}
+.lesson:first-of-type{border-top:0}
+.lesson.off{opacity:.5;text-decoration:line-through}
+.lesson .sub{color:var(--warn);font-weight:700}
+.tag{font-size:.78rem;padding:2px 8px;border-radius:99px;border:1px solid var(--line)}
+.tag.warn{color:var(--warn);border-color:var(--warn)}
+.tag.ok{color:var(--accent);border-color:var(--accent)}
+
+@media (max-width:760px){
+  #app{grid-template-columns:1fr}
+  nav{position:fixed;inset:auto 0 0 0;height:auto;flex-direction:row;padding:6px;z-index:5;overflow-x:auto}
+  nav b,nav .sp{display:none}
+  nav button{flex:1;text-align:center;font-size:.8rem;padding:10px 6px;white-space:nowrap}
+  main{padding-bottom:90px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<section id="login">
+  <form id="loginForm">
+    <h1>KRÉTA<br>Plusz</h1>
+    <p>Nem hivatalos, átláthatóbb felület a saját e-naplódhoz. A jelszavad csak a saját gépeden futó szerveren át megy a KRÉTA felé.</p>
+    <label>Iskola OM-azonosítója<input id="inst" autocomplete="organization" required placeholder="pl. klik035220001"></label>
+    <label>Felhasználónév<input id="user" autocomplete="username" required></label>
+    <label>Jelszó<input id="pass" type="password" autocomplete="current-password" required></label>
+    <div class="err" id="err" role="alert"></div>
+    <button class="btn" type="submit">Belépés</button>
+    <button class="btn ghost" type="button" id="demoBtn">Kipróbálom demó adatokkal</button>
+  </form>
+  <details id="browserLogin" style="width:min(420px,100%);margin-top:18px"><summary style="cursor:pointer;opacity:.8">Ha az automatikus belépés nem megy</summary><div style="display:grid;gap:12px;margin-top:12px">
+    <button class="btn" type="button" id="bStart">Belépés a KRÉTA oldalán (ajánlott)</button>
+    <div id="bStep2" style="display:none;gap:10px">
+      <p style="margin:0;opacity:.85">1. Lépj be az új lapon. A végén a KRÉTA hibaoldalt mutat ("Hivatkozások megnyitása alkalmazásokban"). Ez normális, a belépés ettől még sikeres.<br>
+      2. Ne frissítsd az oldalt. Jelöld ki a böngésző címsorát, másold ki a teljes címet (benne van: <b>?code=...</b>), és illeszd be ide.<br>
+      3. Gyorsan kattints a gombra: a kód pár percig él, és csak egyszer használható.</p>
+      <input id="bUrl" placeholder="Az egész cím (…?code=…), vagy csak a kód" autocomplete="off">
+      <input id="bInst" placeholder="Iskola OM-azonosító (csak ha kéri)" autocomplete="off">
+      <button class="btn ghost" type="button" id="bFinish">Kész, belépek</button>
+    </div>
+  </div></details>
+</section>
+
+<div id="app" class="hidden">
+  <nav aria-label="Fő menü">
+    <b>KRÉTA Plusz</b>
+    <button data-tab="home">Áttekintés</button>
+    <button data-tab="grades">Jegyek</button>
+    <button data-tab="timetable">Órarend</button>
+    <button data-tab="absences">Hiányzások</button>
+    <button data-tab="tasks">Házi és dolgozat</button>
+    <span class="sp"></span>
+    <button id="logout">Kilépés</button>
+  </nav>
+  <main id="view" tabindex="-1"></main>
+</div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const D = (x) => new Date(x);
+const dayName = (d) => D(d).toLocaleDateString('hu-HU', { weekday: 'long', month: 'short', day: 'numeric' });
+const hm = (d) => D(d).toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' });
+const sameDay = (a, b) => D(a).toDateString() === D(b).toDateString();
+const iso = (d) => { const x = D(d); return `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`; };
+
+let DEMO = false;
+const state = { grades: [], lessons: [], absences: [], homework: [], tests: [], weekStart: monday(new Date()), target: 4.5, hyp: {}, errors: [] };
+
+function monday(d) { const x = new Date(d); x.setHours(0,0,0,0); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; }
+
+/* ---------- API ---------- */
+async function api(path) {
+  if (DEMO) return demo(path);
+  const r = await fetch('/api/' + path);
+  if (r.status === 401) { showLogin('A munkamenet lejárt, lépj be újra.'); throw new Error('401'); }
+  if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error((e.error || 'Hiba: ' + r.status) + (e.detail ? ' – ' + String(e.detail).slice(0, 200) : '')); }
+  return r.json();
+}
+
+/* ---------- Normalizálás (a nyers KRÉTA mezőkből) ---------- */
+const nGrade = (g) => ({
+  subj: g.Tantargy?.Nev || 'Egyéb', val: Number(g.SzamErtek) || 0, text: g.SzovegesErtek || '',
+  w: (g.SulySzazalekErteke ?? 100) / 100, date: g.KeszitesDatuma || g.RogzitesDatuma,
+  type: g.Tipus?.Nev || '', theme: g.Tema || '', teacher: g.ErtekeloTanarNeve || '',
+});
+const nLesson = (o) => ({
+  start: o.KezdetIdopont, end: o.VegIdopont, name: o.Nev || o.Tantargy?.Nev || '?', n: o.Oraszam,
+  teacher: o.TanarNeve, room: o.TeremNeve, sub: o.HelyettesTanarNeve, off: o.Allapot?.Nev === 'Elmaradt', theme: o.Tema,
+});
+const nAbs = (m) => ({
+  date: m.Datum, subj: m.Tantargy?.Nev || '', type: m.Tipus?.Nev || '', state: m.IgazolasAllapota || '', n: m.Oraszam,
+});
+const nHw = (h) => ({ subj: h.TantargyNeve || '', text: h.Szoveg || '', due: h.HataridoDatuma, from: h.FeladasDatuma });
+const nTest = (t) => ({ date: t.Datum, subj: t.TantargyNeve || '', theme: t.Temaja || '', mode: t.SzamonkeresModja?.Leiras || '' });
+
+/* ---------- Számolás ---------- */
+const counts = (g) => g.val > 0 && !/felevi|évvégi|evvegi/i.test(g.type);
+function stats(list) {
+  const L = list.filter(counts);
+  const W = L.reduce((a, g) => a + g.w, 0);
+  const S = L.reduce((a, g) => a + g.val * g.w, 0);
+  return { W, S, avg: W ? S / W : null, n: L.length };
+}
+const bySubject = (list) => {
+  const m = new Map();
+  list.forEach((g) => { if (!m.has(g.subj)) m.set(g.subj, []); m.get(g.subj).push(g); });
+  return [...m.entries()].sort((a, b) => a[0].localeCompare(b[0], 'hu'));
+};
+const cls = (v) => 'g' + Math.min(5, Math.max(1, Math.round(v)));
+const fmt = (v) => (v == null ? '–' : v.toFixed(2).replace('.', ','));
+// Mekkora (100%-os) jegy kell még a célátlaghoz
+const needed = (st, target) => (target * (st.W + 1) - st.S);
+
+/* ---------- Nézetek ---------- */
+const views = {
+  home() {
+    const now = new Date();
+    const all = stats(state.grades);
+    const today = state.lessons.filter((l) => sameDay(l.start, now)).sort((a, b) => D(a.start) - D(b.start));
+    const week = new Date(now.getTime() + 7 * 864e5);
+    const tests = state.tests.filter((t) => D(t.date) >= monday(now) && D(t.date) <= week).sort((a, b) => D(a.date) - D(b.date));
+    const hw = state.homework.filter((h) => D(h.due) >= new Date(now.toDateString())).sort((a, b) => D(a.due) - D(b.due)).slice(0, 6);
+    const latest = [...state.grades].filter(counts).sort((a, b) => D(b.date) - D(a.date)).slice(0, 6);
+    const unj = state.absences.filter((a) => !/igazolt/i.test(a.state) || /igazolatlan/i.test(a.state));
+    return `
+    <h2>Áttekintés</h2>
+    <div class="grid">
+      <section class="panel"><h3>Összátlag</h3>
+        <div class="avg">${fmt(all.avg)}</div><div class="muted">${all.n} jegy alapján, súlyozva</div></section>
+      <section class="panel"><h3>Igazolatlan hiányzás</h3>
+        <div class="avg">${unj.length}</div><div class="muted">${unj.length ? 'Érdemes rendezni az osztályfőnökkel.' : 'Nincs igazolatlan óra.'}</div></section>
+    </div>
+    <div class="grid" style="margin-top:16px">
+      <section class="panel"><h3>Mai órák</h3>${today.length ? today.map(lessonRow).join('') : '<div class="empty">Ma nincs óra.</div>'}</section>
+      <section class="panel"><h3>Következő számonkérések</h3>${tests.length ? tests.map((t) =>
+        `<div class="row"><span><b>${esc(t.subj)}</b><br><span class="muted">${esc(t.theme || t.mode)}</span></span><span class="tag warn">${dayName(t.date)}</span></div>`).join('') : '<div class="empty">Nincs bejelentett számonkérés a héten.</div>'}</section>
+      <section class="panel"><h3>Házi feladatok</h3>${hw.length ? hw.map((h) =>
+        `<div class="row"><span><b>${esc(h.subj)}</b><br><span class="muted">${esc(h.text).slice(0, 90)}</span></span><span class="tag">${dayName(h.due)}</span></div>`).join('') : '<div class="empty">Nincs függő házi.</div>'}</section>
+      <section class="panel"><h3>Legfrissebb jegyek</h3>${latest.length ? latest.map((g) =>
+        `<div class="row"><span><b>${esc(g.subj)}</b><br><span class="muted">${esc(g.theme || g.type)}</span></span><span class="chip ${cls(g.val)} ${g.w > 1 ? 'w' : ''}">${g.val}</span></div>`).join('') : '<div class="empty">Még nincs jegy.</div>'}</section>
+    </div>`;
+  },
+
+  grades() {
+    const subs = bySubject(state.grades.filter(counts));
+    const hyp = state.hyp;
+    return `
+    <h2>Jegyek</h2>
+    <div class="tools">
+      <label>Célátlag<select id="target">${[2,3,3.5,4,4.5,5].map((t) => `<option ${t === state.target ? 'selected' : ''} value="${t}">${String(t).replace('.', ',')}</option>`).join('')}</select></label>
+      <span class="muted">A szaggatott keretű jegy dupla súlyú (vagy nagyobb). A „Mi lenne, ha” gombbal tesztelheted, mit hozna egy új jegy.</span>
+    </div>
+    <div class="panel">${subs.map(([name, list]) => {
+      const sorted = [...list].sort((a, b) => D(a.date) - D(b.date));
+      const extra = hyp[name] ? [{ val: hyp[name], w: 1, type: '', theme: 'Mi lenne, ha', hyp: true }] : [];
+      const st = stats([...sorted, ...extra]);
+      const base = stats(sorted);
+      const nd = needed(base, state.target);
+      const hint = base.avg >= state.target ? `A célátlag már megvan.` :
+        nd <= 5 ? `A ${String(state.target).replace('.', ',')} átlaghoz egy ${Math.ceil(nd)}-ös kellene.` :
+        `Egyetlen jegy már nem elég a célhoz, több 5-ös kell.`;
+      return `<div class="subj">
+        <header><h3>${esc(name)}</h3><span><span class="muted">${base.n} jegy</span> &nbsp; <b class="avg" style="font-size:1.5rem">${fmt(st.avg)}</b></span></header>
+        <div class="bar" aria-hidden="true"><i style="width:${(st.avg || 0) * 20}%"></i></div>
+        <div class="chips">${sorted.map((g) => `<span class="chip ${cls(g.val)} ${g.w > 1 ? 'w' : ''}" title="${esc(g.theme)} · ${esc(g.type)} · ${D(g.date).toLocaleDateString('hu-HU')}">${g.val}</span>`).join('')}
+          ${extra.map((g) => `<span class="chip ${cls(g.val)} hyp" title="Feltételezett jegy">${g.val}</span>`).join('')}</div>
+        <div class="need">${hint}
+          ${[5,4,3,2,1].map((v) => `<button class="tag" data-hyp="${esc(name)}|${v}" style="cursor:pointer">+${v}</button>`).join(' ')}
+          ${hyp[name] ? `<button class="tag warn" data-hyp="${esc(name)}|0" style="cursor:pointer">törlés</button>` : ''}</div>
+      </div>`;
+    }).join('') || '<div class="empty">Még nincs jegy.</div>'}</div>`;
+  },
+
+  timetable() {
+    const ws = state.weekStart, we = new Date(ws.getTime() + 6 * 864e5);
+    const days = [...Array(5)].map((_, i) => new Date(ws.getTime() + i * 864e5));
+    return `
+    <h2>Órarend</h2>
+    <div class="tools">
+      <button class="btn ghost" id="prevW" style="color:var(--ink)">‹ Előző</button>
+      <button class="btn ghost" id="thisW" style="color:var(--ink)">Ez a hét</button>
+      <button class="btn ghost" id="nextW" style="color:var(--ink)">Következő ›</button>
+      <span class="muted">${ws.toLocaleDateString('hu-HU')} – ${we.toLocaleDateString('hu-HU')}</span>
+    </div>
+    <div class="week">${days.map((d) => {
+      const ls = state.lessons.filter((l) => sameDay(l.start, d)).sort((a, b) => D(a.start) - D(b.start));
+      return `<section class="day ${sameDay(d, new Date()) ? 'today' : ''}"><h4>${dayName(d)}</h4>${ls.length ? ls.map(lessonRow).join('') : '<div class="empty">Nincs óra</div>'}</section>`;
+    }).join('')}</div>`;
+  },
+
+  absences() {
+    const total = state.absences.reduce((a, m) => a + 1, 0);
+    const ok = state.absences.filter((m) => /^igazolt$/i.test(m.state)).length;
+    const bySub = bySubject(state.absences.map((m) => ({ subj: m.subj || 'Egész napos' })));
+    return `
+    <h2>Hiányzások</h2>
+    <div class="grid">
+      <section class="panel"><h3>Összesen</h3><div class="avg">${total}</div><div class="muted">${ok} igazolt, ${total - ok} egyéb</div></section>
+      <section class="panel"><h3>Tantárgyanként</h3>${bySub.map(([s, l]) => `<div class="row"><span>${esc(s)}</span><b>${l.length}</b></div>`).join('') || '<div class="empty">Nincs hiányzás.</div>'}</section>
+    </div>
+    <section class="panel" style="margin-top:16px"><h3>Részletek</h3>${[...state.absences].sort((a, b) => D(b.date) - D(a.date)).map((m) =>
+      `<div class="row"><span><b>${dayName(m.date)}</b> ${m.n ? `· ${m.n}. óra` : ''}<br><span class="muted">${esc(m.subj)} ${esc(m.type)}</span></span><span class="tag ${/^igazolt$/i.test(m.state) ? 'ok' : 'warn'}">${esc(m.state || 'ismeretlen')}</span></div>`).join('') || '<div class="empty">Nincs adat.</div>'}</section>`;
+  },
+
+  tasks() {
+    const now = new Date(new Date().toDateString());
+    const hw = [...state.homework].sort((a, b) => D(a.due) - D(b.due));
+    const tests = [...state.tests].sort((a, b) => D(a.date) - D(b.date));
+    const split = (arr, key) => [arr.filter((x) => D(x[key]) >= now), arr.filter((x) => D(x[key]) < now).reverse()];
+    const [hwNext, hwOld] = split(hw, 'due');
+    const [tNext, tOld] = split(tests, 'date');
+    const hrow = (h) => `<div class="row"><span><b>${esc(h.subj)}</b><br><span class="muted">${esc(h.text)}</span></span><span class="tag">${dayName(h.due)}</span></div>`;
+    const trow = (t) => `<div class="row"><span><b>${esc(t.subj)}</b><br><span class="muted">${esc(t.theme)} ${esc(t.mode)}</span></span><span class="tag warn">${dayName(t.date)}</span></div>`;
+    return `
+    <h2>Házi és dolgozat</h2>
+    <div class="grid">
+      <section class="panel"><h3>Közelgő számonkérések</h3>${tNext.map(trow).join('') || '<div class="empty">Nincs.</div>'}</section>
+      <section class="panel"><h3>Függő házik</h3>${hwNext.map(hrow).join('') || '<div class="empty">Nincs.</div>'}</section>
+      <section class="panel"><h3>Korábbi számonkérések</h3>${tOld.slice(0, 10).map(trow).join('') || '<div class="empty">Nincs.</div>'}</section>
+      <section class="panel"><h3>Korábbi házik</h3>${hwOld.slice(0, 10).map(hrow).join('') || '<div class="empty">Nincs.</div>'}</section>
+    </div>`;
+  },
+};
+
+function lessonRow(l) {
+  return `<div class="lesson ${l.off ? 'off' : ''}"><b>${l.n ? l.n + '. ' : ''}${esc(l.name)}</b> <span class="muted">${hm(l.start)}–${hm(l.end)}</span><br>
+    <span class="muted">${esc(l.room || '')} ${esc(l.teacher || '')}</span>${l.sub ? ` <span class="sub">Helyettesít: ${esc(l.sub)}</span>` : ''}${l.off ? ' <span class="tag warn">Elmarad</span>' : ''}</div>`;
+}
+
+/* ---------- Vezérlés ---------- */
+let tab = 'home';
+function render() {
+  const bar = state.errors.length ? `<div class="panel" style="border-color:var(--warn);margin-bottom:16px"><h3>Néhány adat nem töltődött be</h3>${state.errors.map((e) => `<div class="row"><b>${esc(e.part)}</b><span class="muted">${esc(e.msg)}</span></div>`).join('')}<button class="btn" id="retry" style="margin-top:10px">Újrapróbálom</button></div>` : '';
+  $('#view').innerHTML = bar + views[tab]();
+  $('#retry')?.addEventListener('click', async () => { $('#view').innerHTML = '<p class="muted">Betöltés…</p>'; await loadAll(); render(); });
+  document.querySelectorAll('nav [data-tab]').forEach((b) => b.setAttribute('aria-current', b.dataset.tab === tab ? 'page' : 'false'));
+  bind();
+}
+function bind() {
+  $('#target')?.addEventListener('change', (e) => { state.target = Number(e.target.value); render(); });
+  document.querySelectorAll('[data-hyp]').forEach((b) => b.addEventListener('click', () => {
+    const [s, v] = b.dataset.hyp.split('|'); if (Number(v)) state.hyp[s] = Number(v); else delete state.hyp[s]; render();
+  }));
+  const shift = (days) => async () => { state.weekStart = days ? new Date(state.weekStart.getTime() + days * 864e5) : monday(new Date()); await loadWeek(); render(); };
+  $('#prevW')?.addEventListener('click', shift(-7));
+  $('#nextW')?.addEventListener('click', shift(7));
+  $('#thisW')?.addEventListener('click', shift(0));
+}
+document.querySelectorAll('nav [data-tab]').forEach((b) => b.addEventListener('click', () => { tab = b.dataset.tab; render(); $('#view').focus(); }));
+
+const DAY = 864e5;
+// A KRÉTA korlátozza a dátumtartomány hosszát, ezért 30 napos darabokban kérjük le,
+// és ha egy darabra 400-at ad, felezzük, amíg el nem fogadja.
+async function ranged(path, from, to) {
+  try {
+    return await api(`${path}?datumTol=${iso(from)}&datumIg=${iso(to)}`);
+  } catch (e) {
+    const days = Math.round((to - from) / DAY);
+    if (days > 6 && /400/.test(e.message)) {
+      const mid = new Date(from.getTime() + Math.floor(days / 2) * DAY);
+      const a = await ranged(path, from, mid);
+      const b = await ranged(path, new Date(mid.getTime() + DAY), to);
+      return [...a, ...b];
+    }
+    throw e;
+  }
+}
+async function chunked(path, from, to, size = 30) {
+  const jobs = [];
+  for (let s = from.getTime(); s <= to.getTime(); s += size * DAY) {
+    jobs.push(ranged(path, new Date(s), new Date(Math.min(s + (size - 1) * DAY, to.getTime()))));
+  }
+  return (await Promise.all(jobs)).flat();
+}
+const uniq = (arr) => { const seen = new Set(); return arr.filter((x) => { const k = JSON.stringify(x); if (seen.has(k)) return false; seen.add(k); return true; }); };
+
+async function loadWeek() {
+  try {
+    state.lessons = (await ranged('orarend', state.weekStart, new Date(state.weekStart.getTime() + 6 * DAY))).map(nLesson);
+    state.errors = state.errors.filter((e) => e.part !== 'Órarend');
+  } catch (e) { state.lessons = []; state.errors.push({ part: 'Órarend', msg: e.message }); }
+}
+async function loadAll() {
+  state.errors = [];
+  const now = Date.now();
+  const sources = [
+    ['Jegyek', () => api('jegyek'), (d) => (state.grades = d.map(nGrade))],
+    ['Hiányzások', () => api('mulasztasok'), (d) => (state.absences = d.map(nAbs))],
+    ['Házi feladatok', () => chunked('hazi', new Date(now - 60 * DAY), new Date(now + 45 * DAY)), (d) => (state.homework = uniq(d).map(nHw))],
+    ['Számonkérések', () => api('szamonkeres'), (d) => (state.tests = d.map(nTest))],
+  ];
+  const res = await Promise.allSettled(sources.map(([, get]) => get()));
+  res.forEach((r, i) => {
+    if (r.status === 'fulfilled') sources[i][2](r.value);
+    else if (r.reason?.message !== '401') state.errors.push({ part: sources[i][0], msg: r.reason?.message || 'ismeretlen hiba' });
+  });
+  await loadWeek();
+}
+async function enter() {
+  $('#login').classList.add('hidden'); $('#app').classList.remove('hidden');
+  $('#view').innerHTML = '<p class="muted">Betöltés…</p>';
+  try { await loadAll(); render(); }
+  catch (e) { if (e.message !== '401') $('#view').innerHTML = `<div class="panel"><h3>Nem sikerült betölteni</h3><p class="muted">${esc(e.message)}</p></div>`; }
+}
+function showLogin(msg) {
+  $('#app').classList.add('hidden'); $('#login').classList.remove('hidden'); $('#err').textContent = msg || '';
+}
+$('#loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault(); $('#err').textContent = 'Belépés…';
+  try {
+    const r = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user: $('#user').value.trim(), pass: $('#pass').value, inst: $('#inst').value.trim() }) });
+    const j = await r.json();
+    $('#pass').value = '';
+    if (!r.ok) { $('#err').textContent = j.error || 'Hiba'; return; }
+    DEMO = false; $('#err').textContent = ''; enter();
+  } catch { $('#err').textContent = 'A helyi szerver nem fut. Indítsd el: node server.js'; }
+});
+$('#bStart').addEventListener('click', async () => {
+  $('#err').textContent = '';
+  try {
+    const j = await (await fetch('/api/auth/start')).json();
+    window.open(j.url, '_blank', 'noopener');
+    $('#bStep2').style.display = 'grid';
+  } catch { $('#err').textContent = 'A helyi szerver nem fut. Indítsd el: python app.py'; }
+});
+$('#bFinish').addEventListener('click', async () => {
+  $('#err').textContent = 'Belépés…';
+  const r = await fetch('/api/auth/finish', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url: $('#bUrl').value, inst: $('#bInst').value }) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) { $('#err').textContent = (j.error || 'Hiba') + (j.detail ? ' (' + j.detail + ')' : ''); return; }
+  $('#bUrl').value = ''; DEMO = false; $('#err').textContent = ''; enter();
+});
+$('#demoBtn').addEventListener('click', () => { DEMO = true; enter(); });
+$('#logout').addEventListener('click', async () => { if (!DEMO) await fetch('/api/logout', { method: 'POST' }); showLogin(); });
+
+/* ---------- Demó adatok ---------- */
+function demo(path) {
+  const base = state.weekStart, at = (d, h, m) => { const x = new Date(base.getTime() + d * 864e5); x.setHours(h, m, 0, 0); return x.toISOString(); };
+  if (path.startsWith('jegyek')) {
+    const mk = (s, v, ago, w = 100, t = 'Témazáró') => ({ Tantargy: { Nev: s }, SzamErtek: v, SulySzazalekErteke: w, KeszitesDatuma: new Date(Date.now() - ago * 864e5).toISOString(), Tipus: { Nev: 'evkozi_jegy_ertekeles' }, Tema: t });
+    return [mk('Matematika',4,40,200),mk('Matematika',5,25),mk('Matematika',3,10,100,'Röpdolgozat'),mk('Magyar nyelv és irodalom',5,30),mk('Magyar nyelv és irodalom',4,12,200),
+      mk('Történelem',3,35,200),mk('Történelem',4,15),mk('Angol',5,20),mk('Angol',5,8,100,'Szódolgozat'),mk('Fizika',2,18,200),mk('Fizika',4,6,100,'Felelet')];
+  }
+  if (path.startsWith('orarend')) {
+    const subj = [['Matematika','Kiss Éva','12'],['Magyar','Nagy Pál','8'],['Történelem','Tóth Ági','21'],['Angol','Szabó Dóra','15'],['Fizika','Varga Imre','Fiz.']];
+    const out = [];
+    for (let d = 0; d < 5; d++) for (let i = 0; i < 5; i++) {
+      const s = subj[(d + i) % 5];
+      out.push({ KezdetIdopont: at(d, 8 + i, 0), VegIdopont: at(d, 8 + i, 45), Nev: s[0], TanarNeve: s[1], TeremNeve: s[2], Oraszam: i + 1,
+        Allapot: { Nev: d === 2 && i === 3 ? 'Elmaradt' : 'Megtartott' }, HelyettesTanarNeve: d === 1 && i === 1 ? 'Horváth Béla' : null });
+    }
+    return out;
+  }
+  if (path.startsWith('mulasztasok')) return [
+    { Datum: new Date(Date.now() - 9 * 864e5).toISOString(), Tantargy: { Nev: 'Matematika' }, Tipus: { Nev: 'Hiányzás' }, IgazolasAllapota: 'Igazolt', Oraszam: 2 },
+    { Datum: new Date(Date.now() - 3 * 864e5).toISOString(), Tantargy: { Nev: 'Angol' }, Tipus: { Nev: 'Késés' }, IgazolasAllapota: 'Igazolatlan', Oraszam: 1 }];
+  if (path.startsWith('hazi')) return [
+    { TantargyNeve: 'Matematika', Szoveg: 'Gyakorlófeladatok 12–18.', HataridoDatuma: at(2, 8, 0) },
+    { TantargyNeve: 'Angol', Szoveg: 'Esszé: My dream holiday (120 szó).', HataridoDatuma: at(3, 8, 0) }];
+  if (path.startsWith('szamonkeres')) return [
+    { Datum: at(3, 9, 0), TantargyNeve: 'Történelem', Temaja: 'A reformkor', SzamonkeresModja: { Leiras: 'Témazáró dolgozat' } },
+    { Datum: at(4, 10, 0), TantargyNeve: 'Fizika', Temaja: 'Newton törvényei', SzamonkeresModja: { Leiras: 'Röpdolgozat' } }];
+  return [];
+}
+</script>
+</body>
+</html>
